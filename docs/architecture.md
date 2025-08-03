@@ -10,7 +10,8 @@ Aurex-AMDUDA aims to provide an AI-native compute runtime that unifies tensor op
    - Converts compute requests into procedural kernel executions.
    - Supports Int4/Int8/FP16 with optional 1-bit regenerative paths.
 3. **Multi-Tier Memory Manager**
-   - GPU Shared → CPU DRAM → NVMe paging.
+   - Detects GPU and NVMe capabilities at runtime.
+   - Maintains a caching hierarchy of GPU → CPU → NVMe with automatic migration when tiers are full.
 4. **Aurex-LM Core**
    - LLM inference for 7B–70B models with quantization.
    - Operates standalone without AUREUS or HipCortex dependencies.
@@ -18,3 +19,11 @@ Aurex-AMDUDA aims to provide an AI-native compute runtime that unifies tensor op
    - HipCortex symbolic memory.
    - AUREUS agent runtime.
    - Quantum Seed Engine for regenerative inference.
+
+## Memory Tiering Strategy
+
+AMDUDA detects available accelerators through environment variables and
+allocates memory on the fastest tier. GPU memory acts as a cache for hot data;
+when it fills, blocks are migrated to CPU DRAM and, if necessary, spilled to
+NVMe storage. The `MemoryManager` API also exposes manual migration routines to
+promote or demote data between tiers.
