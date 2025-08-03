@@ -1,0 +1,8 @@
+[package]
+name = "aurex-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aurex-runtime = { path = "../aurex-runtime" }
+async-trait = "0.1"
