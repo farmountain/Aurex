@@ -54,6 +54,10 @@ Most frameworks—like CUDA—optimize solely for matrix math and NVIDIA GPUs. B
   - CPU (fallback)
 - Plugin system for custom ops, NPU drivers, edge runtimes
 
+### Aurex-AMDUDA Core Runtime
+
+The `amduda` crate provides the core CUDA-alternative runtime targeting AMD/Intel GPUs and CPU SIMD. It includes a unified TensorOps API, procedural kernel scheduler, multi-tier memory manager, and standalone LLM inference engine with optional integrations.
+
 ---
 
 ## 🧪 Example: LLM Agent on AMD ROCm

@@ -1,14 +1,20 @@
-# AUREX Architecture
+# Aurex Unified Device Architecture
 
-AUREX is structured to unify tensor execution, symbolic reasoning, and procedural scheduling under a hardware-agnostic agent-first runtime. It is based on the AUREUS framework.
+Aurex-AMDUDA aims to provide an AI-native compute runtime that unifies tensor operations, procedural scheduling, and memory management across heterogeneous hardware.
 
-## Key Components:
-- **Runtime Engine**: Orchestrates execution with EffortEvaluator, ReflexionLoop, ConfidenceRegulator
-- **Kernel Layer**: Tensor ops (GEMM, Conv, Attn), symbolic ops (FSM), procedural ops (goal/subgoal)
-- **Backends**: ROCm, SYCL, Vulkan, CPU
-- **Dispatch Layer**: Trait-based hardware routing with plugin support
-- **Agent Execution Loop**: perception → reasoning → action → reflexion
-
-## Data Flow:
-Agent → Scheduler → Kernel → Dispatcher → Backend
-↳ feedback to ReflexionLoop and HypothesisManager for correction and retry
+## Core Functionalities
+1. **Unified TensorOps API**
+   - `tensor_mul()`, `tensor_add()`, `kv_cache_allocate()`
+   - Works across Vulkan, ROCm, OpenCL, and CPU SIMD backends.
+2. **Procedural Kernel Scheduler (FSM + JIT)**
+   - Converts compute requests into procedural kernel executions.
+   - Supports Int4/Int8/FP16 with optional 1-bit regenerative paths.
+3. **Multi-Tier Memory Manager**
+   - GPU Shared → CPU DRAM → NVMe paging.
+4. **Aurex-LM Core**
+   - LLM inference for 7B–70B models with quantization.
+   - Operates standalone without AUREUS or HipCortex dependencies.
+5. **Optional Integrations**
+   - HipCortex symbolic memory.
+   - AUREUS agent runtime.
+   - Quantum Seed Engine for regenerative inference.
