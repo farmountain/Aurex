@@ -104,6 +104,25 @@ aurex-cli compile my_model.py --target=rocm
 
 > Note: ROCm 6.0+ or SYCL-enabled devices required. Vulkan and CPU fallback supported.
 
+### ROCm Setup
+
+To build and run the ROCm backend you need a working installation of the AMD
+ROCm stack.
+
+1. Install **ROCm 6.0 or newer** following the instructions for your
+   distribution on [rocm.docs.amd.com](https://rocm.docs.amd.com).
+2. Ensure the HIP toolchain is available by adding `\/opt\/rocm/bin` to your
+   `PATH` and `\/opt\/rocm/lib` to `LD_LIBRARY_PATH`.
+3. Validate the installation with `rocminfo` and `hipcc --version`.
+4. Enable the backend when building AUREX:
+
+   ```sh
+   cargo test -p amduda --features rocm
+   ```
+
+The build falls back to a CPU implementation when ROCm is not present so the
+project can still be compiled and tested on systems without AMD GPUs.
+
 
 
 

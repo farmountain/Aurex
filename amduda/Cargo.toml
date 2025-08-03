@@ -11,6 +11,11 @@ path = "src/lib.rs"
 aurex-runtime = { path = "../aurex-runtime" }
 llvm-sys = "150"
 once_cell = "1"
+hip-runtime-sys = { version = "0.1.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
+
+[features]
+default = []
+rocm = ["hip-runtime-sys"]
