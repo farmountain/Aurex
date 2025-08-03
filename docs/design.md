@@ -14,6 +14,21 @@ Rust was chosen for:
 - `aurex-backend`: backend dispatch for ROCm, SYCL, CPU
 - `aurex-utils`: profilers, test scaffolds, introspection
 
+## JIT Compilation
+
+`amduda_core` ships with a lightweight JIT compiler built on top of `llvm-sys`. Kernels are
+parsed from simple textual descriptions (e.g. `"add"`, `"mul"`) into LLVM IR and compiled at
+runtime. Compiled kernels are cached per device backend to avoid redundant work and enable
+device-specific optimizations.
+
+Example usage:
+
+```rust
+use amduda::amduda_core::jit_compiler::{compile_kernel, Device};
+let kernel = compile_kernel("add", Device::CPU).unwrap();
+assert_eq!((kernel.func)(1, 2), 3);
+```
+
 ## Coding Conventions:
 - Use `async_trait` for extensible agent behavior
 - Never use unsafe unless FFI boundary requires
