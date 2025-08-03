@@ -6,3 +6,9 @@ edition = "2021"
 [lib]
 name = "amduda"
 path = "src/lib.rs"
+
+[dependencies]
+aurex-runtime = { path = "../aurex-runtime" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread"] }
