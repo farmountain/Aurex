@@ -1,5 +1,6 @@
 //! Backend dispatch stub.
 
+#[derive(Debug)]
 pub enum Backend {
     Cpu,
     #[allow(dead_code)]
