@@ -31,6 +31,7 @@ name = "amduda"
 version = "0.1.0"
 dependencies = [
  "aurex-runtime",
+ "hip-runtime-sys",
  "llvm-sys",
  "once_cell",
  "tokio",
@@ -125,6 +126,15 @@ name = "gimli"
 version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
+
+[[package]]
+name = "hip-runtime-sys"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "606d9a952a33b70c688e6bf6853f4b70545c40ba5e0a2ca6318e498d5b41b1c6"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "io-uring"
