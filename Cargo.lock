@@ -34,6 +34,7 @@ dependencies = [
  "ash",
  "aurex-runtime",
  "criterion",
+ "half",
  "hip-runtime-sys",
  "llvm-sys",
  "memmap2",

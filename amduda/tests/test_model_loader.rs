@@ -34,6 +34,16 @@ fn test_load_model_from_disk() {
 }
 
 #[test]
+fn test_load_model_bf16() {
+    std::env::set_var("AMDUDA_HAS_GPU", "0");
+    std::env::set_var("AMDUDA_HAS_NVME", "0");
+    let config = write_dummy_model(4, "bf16");
+    let model = load_model(config.to_str().unwrap()).unwrap();
+    assert_eq!(model.config.quantization, Some(Quantization::Bf16));
+    assert_eq!(model.tier, MemoryTier::Cpu);
+}
+
+#[test]
 fn test_load_model_mmap() {
     std::env::set_var("AMDUDA_HAS_GPU", "0");
     std::env::set_var("AMDUDA_HAS_NVME", "1");
