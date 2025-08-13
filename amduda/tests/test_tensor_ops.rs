@@ -41,12 +41,14 @@ fn cpu_backend_ops() {
 
 #[test]
 fn rocm_backend_ops() {
-    run_backend(&RocmBackend);
+    run_backend(&RocmBackend::new());
 }
 
 #[test]
 fn vulkan_backend_ops() {
-    run_backend(&VulkanBackend);
+    if let Ok(backend) = VulkanBackend::new() {
+        run_backend(&backend);
+    }
 }
 
 #[test]

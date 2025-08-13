@@ -17,7 +17,12 @@ anyhow = "1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
+criterion = "0.5"
 
 [features]
 default = []
 rocm = ["hip-runtime-sys"]
+
+[[bench]]
+name = "simd_vs_scalar"
+harness = false

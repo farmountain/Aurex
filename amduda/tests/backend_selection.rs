@@ -33,7 +33,11 @@ fn selects_rocm_when_requested() {
 #[test]
 fn selects_vulkan_when_requested() {
     with_backend_var(Some("vulkan"), || {
-        assert_eq!(hal_backends::select_backend(), BackendKind::Vulkan);
+        if hal_backends::vulkan_backend::VulkanBackend::is_available() {
+            assert_eq!(hal_backends::select_backend(), BackendKind::Vulkan);
+        } else {
+            assert_eq!(hal_backends::select_backend(), BackendKind::CpuSimd);
+        }
     });
 }
 
