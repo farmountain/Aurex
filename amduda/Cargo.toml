@@ -9,7 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 aurex-runtime = { path = "../aurex-runtime" }
-llvm-sys = "150"
+llvm-sys = { version = "150", optional = true }
 once_cell = "1"
 hip-runtime-sys = { version = "0.1.1", optional = true }
 ash = { version = "0.37", default-features = false, features = ["loaded"] }
@@ -22,10 +22,12 @@ memmap2 = "0.5"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 criterion = "0.5"
 tempfile = "3"
+serial_test = "2"
 
 [features]
 default = []
 rocm = ["hip-runtime-sys"]
+jit = ["llvm-sys"]
 
 [[bench]]
 name = "simd_vs_scalar"
