@@ -102,7 +102,7 @@ Licensing	Proprietary	MIT/BSD Open Source
 pip install aurex-runtime
 aurex-cli compile my_model.py --target=rocm
 
-> Note: ROCm 6.0+ or SYCL-enabled devices required. Vulkan and CPU fallback supported.
+> Note: ROCm 6.0+ or SYCL-enabled devices required. Vulkan backend needs the Vulkan SDK 1.3+ and a driver with compute support. CPU fallback is always available.
 
 ### ROCm Setup
 
@@ -122,6 +122,27 @@ ROCm stack.
 
 The build falls back to a CPU implementation when ROCm is not present so the
 project can still be compiled and tested on systems without AMD GPUs.
+
+If LLVM 15 is not available on your system, skip the `amduda` crate during
+tests to avoid the `llvm-sys` build:
+
+```sh
+cargo test --all --exclude amduda
+```
+
+### Vulkan Setup
+
+To enable the Vulkan compute backend you must have:
+
+1. A Vulkan 1.3 capable GPU and driver.
+2. The [Vulkan SDK](https://vulkan.lunarg.com/) installed with `VULKAN_SDK` set.
+3. Validation with `vulkaninfo` from the SDK.
+4. Run the demo with:
+
+   ```sh
+   cargo run --example vulkan_demo
+   ```
+
 
 
 
