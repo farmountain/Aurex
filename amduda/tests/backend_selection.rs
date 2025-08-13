@@ -47,3 +47,10 @@ fn selects_opencl_when_requested() {
         assert_eq!(hal_backends::select_backend(), BackendKind::OpenCl);
     });
 }
+
+#[test]
+fn selects_sycl_when_requested() {
+    with_backend_var(Some("sycl"), || {
+        assert_eq!(hal_backends::select_backend(), BackendKind::Sycl);
+    });
+}
