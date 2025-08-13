@@ -1,6 +1,6 @@
 # 🧠 AUREX: Agentic Unified Runtime for Execution
 
-> An open-source, cross-platform AI acceleration framework that unifies **tensor**, **symbolic**, and **procedural** execution for **AI agents**, built to outperform CUDA and democratize access to advanced compute across AMD, Intel, and heterogeneous systems.
+> An open-source, cross-platform AI acceleration framework that unifies **tensor**, **symbolic**, and **procedural** execution for **AI agents**, built to benchmark CUDA performance and democratize access to advanced compute across AMD, Intel, and heterogeneous systems.
 
 ---
 
