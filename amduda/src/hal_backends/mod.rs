@@ -28,7 +28,7 @@ pub fn select_backend() -> BackendKind {
         .as_str()
     {
         "rocm" if rocm_backend::RocmBackend::is_available() => BackendKind::Rocm,
-        "vulkan" => BackendKind::Vulkan,
+        "vulkan" if vulkan_backend::VulkanBackend::is_available() => BackendKind::Vulkan,
         "opencl" if opencl_backend::OpenClBackend::is_available() => BackendKind::OpenCl,
         _ => BackendKind::CpuSimd,
     }
