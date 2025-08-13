@@ -7,6 +7,8 @@ pub enum Backend {
     Rocm,
     #[allow(dead_code)]
     Sycl,
+    #[allow(dead_code)]
+    OpenCl,
 }
 
 impl Backend {

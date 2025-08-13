@@ -1,9 +1,9 @@
 //! Hardware abstraction layer backends.
 
-pub mod vulkan_backend;
-pub mod rocm_backend;
-pub mod opencl_backend;
 pub mod cpu_simd;
+pub mod opencl_backend;
+pub mod rocm_backend;
+pub mod vulkan_backend;
 
 /// Enumeration of the available backend types.  This is used by tests to ensure
 /// that the correct backend is selected from environment configuration.
@@ -15,6 +15,8 @@ pub enum BackendKind {
     Rocm,
     /// Vulkan compute backend.
     Vulkan,
+    /// OpenCL backend (CPU or GPU devices).
+    OpenCl,
 }
 
 /// Select a backend based on the `AUREX_BACKEND` environment variable.  If the
@@ -27,6 +29,7 @@ pub fn select_backend() -> BackendKind {
     {
         "rocm" if rocm_backend::RocmBackend::is_available() => BackendKind::Rocm,
         "vulkan" => BackendKind::Vulkan,
+        "opencl" if opencl_backend::OpenClBackend::is_available() => BackendKind::OpenCl,
         _ => BackendKind::CpuSimd,
     }
 }
