@@ -40,12 +40,31 @@ impl Default for Runtime {
 }
 
 impl Runtime {
-    /// Perform a single runtime step and return the resulting event. In this
-    /// prototype implementation the event is simply echoed back, allowing tests
-    /// and higher level logic to simulate runtime behaviour.
-    pub async fn step(&self, event: RuntimeEvent) -> RuntimeEvent {
+    /// Perform a single runtime step, invoking the evaluation, regulation,
+    /// reflexion, and hypothesis components in sequence. If the effort
+    /// evaluator rejects the step, an [`RuntimeEvent::Error`] is returned.
+    pub async fn step<Ev, Cf, Rx, Hy>(
+        &self,
+        event: RuntimeEvent,
+        evaluator: &Ev,
+        regulator: &Cf,
+        reflexion: &Rx,
+        hypothesis: &Hy,
+    ) -> RuntimeEvent
+    where
+        Ev: EffortEvaluator + Send + Sync,
+        Cf: ConfidenceRegulator + Send + Sync,
+        Rx: ReflexionLoop + Send + Sync,
+        Hy: HypothesisManager + Send + Sync,
+    {
         println!("runtime step: {:?}", event);
-        event
+        if !evaluator.evaluate(&event).await {
+            return RuntimeEvent::Error;
+        }
+
+        let event = regulator.regulate(&event).await;
+        let event = reflexion.reflect(&event).await;
+        hypothesis.manage(&event).await
     }
 
     /// Update the runtime's numeric precision. This allows dynamic precision
@@ -63,4 +82,123 @@ impl Runtime {
 #[async_trait]
 pub trait Executor {
     async fn execute(&self);
+}
+
+pub mod effort_evaluator {
+    use super::RuntimeEvent;
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait EffortEvaluator {
+        async fn evaluate(&self, event: &RuntimeEvent) -> bool;
+    }
+}
+
+pub mod confidence_regulator {
+    use super::RuntimeEvent;
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait ConfidenceRegulator {
+        async fn regulate(&self, event: &RuntimeEvent) -> RuntimeEvent;
+    }
+}
+
+pub mod reflexion_loop {
+    use super::RuntimeEvent;
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait ReflexionLoop {
+        async fn reflect(&self, event: &RuntimeEvent) -> RuntimeEvent;
+    }
+}
+
+pub mod hypothesis_manager {
+    use super::RuntimeEvent;
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait HypothesisManager {
+        async fn manage(&self, event: &RuntimeEvent) -> RuntimeEvent;
+    }
+}
+
+pub use confidence_regulator::ConfidenceRegulator;
+pub use effort_evaluator::EffortEvaluator;
+pub use hypothesis_manager::HypothesisManager;
+pub use reflexion_loop::ReflexionLoop;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use async_trait::async_trait;
+
+    struct AcceptEvaluator;
+    #[async_trait]
+    impl EffortEvaluator for AcceptEvaluator {
+        async fn evaluate(&self, _event: &RuntimeEvent) -> bool {
+            true
+        }
+    }
+
+    struct RejectEvaluator;
+    #[async_trait]
+    impl EffortEvaluator for RejectEvaluator {
+        async fn evaluate(&self, _event: &RuntimeEvent) -> bool {
+            false
+        }
+    }
+
+    struct EchoRegulator;
+    #[async_trait]
+    impl ConfidenceRegulator for EchoRegulator {
+        async fn regulate(&self, event: &RuntimeEvent) -> RuntimeEvent {
+            event.clone()
+        }
+    }
+
+    struct Reflector;
+    #[async_trait]
+    impl ReflexionLoop for Reflector {
+        async fn reflect(&self, event: &RuntimeEvent) -> RuntimeEvent {
+            event.clone()
+        }
+    }
+
+    struct Manager;
+    #[async_trait]
+    impl HypothesisManager for Manager {
+        async fn manage(&self, event: &RuntimeEvent) -> RuntimeEvent {
+            event.clone()
+        }
+    }
+
+    #[tokio::test]
+    async fn runtime_step_success() {
+        let runtime = Runtime::default();
+        let event = RuntimeEvent::TokenFetched { cache_hit: true };
+        let evaluator = AcceptEvaluator;
+        let regulator = EchoRegulator;
+        let reflexion = Reflector;
+        let manager = Manager;
+        let result = runtime
+            .step(event.clone(), &evaluator, &regulator, &reflexion, &manager)
+            .await;
+        assert_eq!(result, event);
+    }
+
+    #[tokio::test]
+    async fn runtime_step_evaluation_fails() {
+        let runtime = Runtime::default();
+        let event = RuntimeEvent::TokenFetched { cache_hit: true };
+        let evaluator = RejectEvaluator;
+        let regulator = EchoRegulator;
+        let reflexion = Reflector;
+        let manager = Manager;
+        let result = runtime
+            .step(event, &evaluator, &regulator, &reflexion, &manager)
+            .await;
+        assert_eq!(result, RuntimeEvent::Error);
+    }
 }
