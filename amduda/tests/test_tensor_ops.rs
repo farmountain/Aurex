@@ -1,5 +1,6 @@
 use amduda::amduda_core::tensor_ops::TensorOps;
 use amduda::hal_backends::cpu_simd::CpuSimdBackend;
+use amduda::hal_backends::opencl_backend::{DeviceKind, OpenClBackend};
 use amduda::hal_backends::rocm_backend::RocmBackend;
 use amduda::hal_backends::vulkan_backend::VulkanBackend;
 
@@ -46,4 +47,23 @@ fn rocm_backend_ops() {
 #[test]
 fn vulkan_backend_ops() {
     run_backend(&VulkanBackend);
+}
+
+#[test]
+fn opencl_cpu_backend_ops() {
+    let backend = OpenClBackend::new(DeviceKind::Cpu);
+    run_backend(&backend);
+}
+
+#[test]
+fn opencl_gpu_backend_ops() {
+    let backend = OpenClBackend::new(DeviceKind::Gpu);
+    run_backend(&backend);
+}
+
+#[test]
+fn opencl_device_enumeration() {
+    let devices = OpenClBackend::enumerate();
+    assert!(devices.iter().any(|d| d.kind == DeviceKind::Cpu));
+    assert!(devices.iter().any(|d| d.kind == DeviceKind::Gpu));
 }

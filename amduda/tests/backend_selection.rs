@@ -36,3 +36,10 @@ fn selects_vulkan_when_requested() {
         assert_eq!(hal_backends::select_backend(), BackendKind::Vulkan);
     });
 }
+
+#[test]
+fn selects_opencl_when_requested() {
+    with_backend_var(Some("opencl"), || {
+        assert_eq!(hal_backends::select_backend(), BackendKind::OpenCl);
+    });
+}
