@@ -13,6 +13,11 @@ pub enum Backend {
 
 impl Backend {
     pub fn execute(&self) {
-        println!("Executing on {:?}", self);
+        match self {
+            Backend::Cpu => println!("Executing on CPU"),
+            Backend::Rocm => println!("Executing on ROCm"),
+            Backend::Sycl => println!("Executing on SYCL via oneAPI"),
+            Backend::OpenCl => println!("Executing on OpenCL"),
+        }
     }
 }
