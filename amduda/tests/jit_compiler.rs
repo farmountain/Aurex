@@ -1,3 +1,5 @@
+#![cfg(feature = "jit")]
+
 use amduda::amduda_core::jit_compiler::{compile_kernel, Device};
 
 #[test]

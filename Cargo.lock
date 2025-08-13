@@ -40,6 +40,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_json",
+ "serial_test",
  "tempfile",
  "tokio",
 ]

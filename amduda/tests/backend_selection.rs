@@ -1,4 +1,5 @@
 use amduda::hal_backends::{self, BackendKind};
+use serial_test::serial;
 
 // Helper to run selection with environment variable.
 fn with_backend_var<F: FnOnce()>(val: Option<&str>, f: F) {
@@ -17,6 +18,7 @@ fn with_backend_var<F: FnOnce()>(val: Option<&str>, f: F) {
 }
 
 #[test]
+#[serial]
 fn default_falls_back_to_cpu() {
     with_backend_var(None, || {
         assert_eq!(hal_backends::select_backend(), BackendKind::CpuSimd);
@@ -24,6 +26,7 @@ fn default_falls_back_to_cpu() {
 }
 
 #[test]
+#[serial]
 fn selects_rocm_when_requested() {
     with_backend_var(Some("rocm"), || {
         assert_eq!(hal_backends::select_backend(), BackendKind::Rocm);
@@ -31,6 +34,7 @@ fn selects_rocm_when_requested() {
 }
 
 #[test]
+#[serial]
 fn selects_vulkan_when_requested() {
     with_backend_var(Some("vulkan"), || {
         if hal_backends::vulkan_backend::VulkanBackend::is_available() {
@@ -42,6 +46,7 @@ fn selects_vulkan_when_requested() {
 }
 
 #[test]
+#[serial]
 fn selects_opencl_when_requested() {
     with_backend_var(Some("opencl"), || {
         assert_eq!(hal_backends::select_backend(), BackendKind::OpenCl);
@@ -49,6 +54,7 @@ fn selects_opencl_when_requested() {
 }
 
 #[test]
+#[serial]
 fn selects_sycl_when_requested() {
     with_backend_var(Some("sycl"), || {
         assert_eq!(hal_backends::select_backend(), BackendKind::Sycl);
