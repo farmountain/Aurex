@@ -1,5 +1,6 @@
 use amduda::amduda_core::memory_tiering::MemoryTier;
 use amduda::aurex_lm::model_loader::{load_model, Quantization, Weights};
+use serial_test::serial;
 use serde_json::json;
 use tempfile::tempdir;
 
@@ -20,6 +21,7 @@ fn write_dummy_model(size: usize, quant: &str) -> std::path::PathBuf {
 }
 
 #[test]
+#[serial]
 fn test_load_model_from_disk() {
     std::env::set_var("AMDUDA_HAS_GPU", "0");
     std::env::set_var("AMDUDA_HAS_NVME", "0");
@@ -34,6 +36,7 @@ fn test_load_model_from_disk() {
 }
 
 #[test]
+#[serial]
 fn test_load_model_bf16() {
     std::env::set_var("AMDUDA_HAS_GPU", "0");
     std::env::set_var("AMDUDA_HAS_NVME", "0");
@@ -44,6 +47,7 @@ fn test_load_model_bf16() {
 }
 
 #[test]
+#[serial]
 fn test_load_model_mmap() {
     std::env::set_var("AMDUDA_HAS_GPU", "0");
     std::env::set_var("AMDUDA_HAS_NVME", "1");
@@ -55,4 +59,17 @@ fn test_load_model_mmap() {
         Weights::Mmap(mmap) => assert_eq!(mmap.len(), 9000),
         _ => panic!("expected mmap weights"),
     }
+}
+
+#[test]
+#[serial]
+fn test_load_large_model_gpu_nvme() {
+    std::env::set_var("AMDUDA_HAS_GPU", "1");
+    std::env::set_var("AMDUDA_HAS_NVME", "1");
+    std::env::set_var("AMDUDA_GPU_MEM", "64");
+    std::env::set_var("AMDUDA_CPU_MEM", "64");
+    std::env::set_var("AMDUDA_NVME_MEM", "256");
+    let config = write_dummy_model(200, "int8");
+    let model = load_model(config.to_str().unwrap()).unwrap();
+    assert_eq!(model.tier, MemoryTier::Nvme);
 }

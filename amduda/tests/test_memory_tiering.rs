@@ -1,6 +1,8 @@
 use amduda::amduda_core::memory_tiering::{DeviceCapabilities, MemoryManager, MemoryTier};
+use serial_test::serial;
 
 #[test]
+#[serial]
 fn gpu_caching_and_migration() {
     std::env::set_var("AMDUDA_HAS_GPU", "1");
     std::env::set_var("AMDUDA_HAS_NVME", "1");
@@ -18,6 +20,7 @@ fn gpu_caching_and_migration() {
 }
 
 #[test]
+#[serial]
 fn cpu_and_nvme_fallback() {
     std::env::set_var("AMDUDA_HAS_GPU", "0");
     std::env::set_var("AMDUDA_HAS_NVME", "1");
@@ -35,6 +38,7 @@ fn cpu_and_nvme_fallback() {
 }
 
 #[test]
+#[serial]
 fn manual_migration() {
     std::env::set_var("AMDUDA_HAS_GPU", "1");
     std::env::set_var("AMDUDA_HAS_NVME", "1");
@@ -47,4 +51,30 @@ fn manual_migration() {
 
     mgr.migrate(MemoryTier::Cpu, MemoryTier::Nvme, 8);
     assert_eq!(mgr.usage(), (16, 8, 8));
+}
+
+#[test]
+#[serial]
+fn cold_data_evicted_first() {
+    std::env::set_var("AMDUDA_HAS_GPU", "1");
+    std::env::set_var("AMDUDA_HAS_NVME", "1");
+    let caps = DeviceCapabilities::detect();
+    let mut mgr = MemoryManager::new_with_limits(caps, 64, 64, 256);
+
+    mgr.allocate(64);
+    mgr.mark_cold(MemoryTier::Gpu, 32);
+    assert_eq!(mgr.allocate(32), MemoryTier::Gpu);
+    assert_eq!(mgr.usage(), (64, 32, 0));
+}
+
+#[test]
+#[serial]
+fn large_allocation_falls_back() {
+    std::env::set_var("AMDUDA_HAS_GPU", "1");
+    std::env::set_var("AMDUDA_HAS_NVME", "1");
+    let caps = DeviceCapabilities::detect();
+    let mut mgr = MemoryManager::new_with_limits(caps, 64, 64, 256);
+
+    assert_eq!(mgr.allocate(200), MemoryTier::Nvme);
+    assert_eq!(mgr.usage(), (0, 0, 200));
 }
