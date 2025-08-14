@@ -1,6 +1,9 @@
 //! AUREX runtime orchestrates agent execution and dispatches operations to the appropriate backend.
 use async_trait::async_trait;
 
+pub mod plugin;
+pub use plugin::{BackendPlugin, PluginRegistry};
+
 /// Events emitted by the runtime to drive higher level state machines.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuntimeEvent {
