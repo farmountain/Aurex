@@ -1,0 +1,11 @@
+[package]
+name = "aurex-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+
+aurex-runtime = { path = "../aurex-runtime" }
+
+aurex-backend = { path = "../aurex-backend" }

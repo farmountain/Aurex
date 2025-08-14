@@ -101,6 +101,7 @@ Licensing	Proprietary	MIT/BSD Open Source
 
 pip install aurex-runtime
 aurex-cli compile my_model.py --target=rocm
+aurex-cli run my_model.aurex --target=cpu
 
 > Note: ROCm 6.0+ or SYCL-enabled devices required. Vulkan backend needs the Vulkan SDK 1.3+ and a driver with compute support. CPU fallback is always available.
 
