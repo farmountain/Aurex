@@ -63,3 +63,40 @@ impl PluginRegistry {
         self.plugins.keys().map(|k| k.as_str()).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    struct TestPlugin {
+        executed: Arc<Mutex<bool>>,
+    }
+
+    impl BackendPlugin for TestPlugin {
+        fn name(&self) -> &'static str {
+            "test"
+        }
+        fn initialize(&self) {}
+        fn execute(&self) {
+            *self.executed.lock().unwrap() = true;
+        }
+    }
+
+    #[test]
+    fn register_and_execute_plugin() {
+        let executed = Arc::new(Mutex::new(false));
+        let plugin = TestPlugin {
+            executed: executed.clone(),
+        };
+
+        let mut registry = PluginRegistry::new();
+        registry
+            .plugins
+            .insert(plugin.name().to_string(), Box::new(plugin));
+
+        assert_eq!(registry.list(), vec!["test"]);
+        registry.execute("test");
+        assert!(*executed.lock().unwrap());
+    }
+}
