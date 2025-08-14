@@ -17,6 +17,8 @@ pub enum RuntimeEvent {
     AttentionComputed,
     /// A token has been emitted as output.
     TokenEmitted,
+    /// Roll back to retry processing the current token.
+    Rollback,
     /// An unrecoverable error occurred.
     Error,
 }
@@ -67,7 +69,21 @@ impl Runtime {
 
         let event = regulator.regulate(&event).await;
         let event = reflexion.reflect(&event).await;
-        hypothesis.manage(&event).await
+        let event = hypothesis.manage(&event).await;
+        match event {
+            RuntimeEvent::TokenFetched { cache_hit } => {
+                if cache_hit {
+                    RuntimeEvent::AttentionComputed
+                } else {
+                    RuntimeEvent::CacheUpdated
+                }
+            }
+            RuntimeEvent::CacheUpdated => RuntimeEvent::AttentionComputed,
+            RuntimeEvent::AttentionComputed => RuntimeEvent::TokenEmitted,
+            RuntimeEvent::TokenEmitted => RuntimeEvent::TokenFetched { cache_hit: false },
+            RuntimeEvent::Rollback => RuntimeEvent::TokenFetched { cache_hit: false },
+            RuntimeEvent::Error => RuntimeEvent::Error,
+        }
     }
 
     /// Update the runtime's numeric precision. This allows dynamic precision
@@ -186,9 +202,9 @@ mod tests {
         let reflexion = Reflector;
         let manager = Manager;
         let result = runtime
-            .step(event.clone(), &evaluator, &regulator, &reflexion, &manager)
+            .step(event, &evaluator, &regulator, &reflexion, &manager)
             .await;
-        assert_eq!(result, event);
+        assert_eq!(result, RuntimeEvent::AttentionComputed);
     }
 
     #[tokio::test]

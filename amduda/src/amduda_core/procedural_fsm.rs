@@ -25,7 +25,9 @@ pub struct ProceduralFsm {
 impl ProceduralFsm {
     /// Create a new FSM starting in [`State::FetchToken`].
     pub fn new() -> Self {
-        Self { state: State::FetchToken }
+        Self {
+            state: State::FetchToken,
+        }
     }
 
     /// Get the current state.
@@ -46,6 +48,7 @@ impl ProceduralFsm {
             (State::KVCacheUpdate, RuntimeEvent::CacheUpdated) => State::ComputeAttention,
             (State::ComputeAttention, RuntimeEvent::AttentionComputed) => State::OutputToken,
             (State::OutputToken, RuntimeEvent::TokenEmitted) => State::FetchToken,
+            (_, RuntimeEvent::Rollback) => State::FetchToken,
             (_, RuntimeEvent::Error) => State::Error,
             // Unexpected events leave the state unchanged.
             (s, _) => s,
@@ -53,17 +56,17 @@ impl ProceduralFsm {
         self.state
     }
 
-    /// Convenience helper that performs a runtime step and applies the resulting
-    /// event to the FSM.
+    /// Convenience helper that applies an event to the FSM and returns the next
+    /// runtime event scheduled by [`Runtime::step`].
     pub async fn step_with_runtime(
         &mut self,
         runtime: &Runtime,
         event: RuntimeEvent,
-    ) -> State {
+    ) -> RuntimeEvent {
+        use async_trait::async_trait;
         use aurex_runtime::{
             ConfidenceRegulator, EffortEvaluator, HypothesisManager, ReflexionLoop,
         };
-        use async_trait::async_trait;
 
         struct AcceptEvaluator;
         #[async_trait]
@@ -97,10 +100,18 @@ impl ProceduralFsm {
             }
         }
 
-        let ev = runtime
-            .step(event, &AcceptEvaluator, &EchoRegulator, &Reflector, &Manager)
-            .await;
-        self.on_event(ev)
+        // Apply the current event to update state.
+        self.on_event(event.clone());
+
+        // Let the runtime schedule the next event.
+        runtime
+            .step(
+                event,
+                &AcceptEvaluator,
+                &EchoRegulator,
+                &Reflector,
+                &Manager,
+            )
+            .await
     }
 }
-
