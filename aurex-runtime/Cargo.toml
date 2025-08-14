@@ -9,3 +9,7 @@ aurex-backend = { path = "../aurex-backend" }
 async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 libloading = "0.8"
+
+[dev-dependencies]
+amduda = { path = "../amduda" }
+fpga_npu = { path = "../aurex-plugins/fpga_npu" }

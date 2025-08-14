@@ -3,6 +3,7 @@ use amduda::hal_backends::cpu_simd::CpuSimdBackend;
 use amduda::hal_backends::opencl_backend::{DeviceKind, OpenClBackend};
 use amduda::hal_backends::rocm_backend::RocmBackend;
 use amduda::hal_backends::vulkan_backend::VulkanBackend;
+use amduda::hal_backends::riscv_backend::RiscvBackend;
 
 fn run_backend<B: TensorOps>(backend: &B) {
     // MatMul test 2x2 * 2x2
@@ -68,4 +69,10 @@ fn opencl_device_enumeration() {
     let devices = OpenClBackend::enumerate();
     assert!(devices.iter().any(|d| d.kind == DeviceKind::Cpu));
     assert!(devices.iter().any(|d| d.kind == DeviceKind::Gpu));
+}
+
+#[test]
+fn riscv_backend_ops() {
+    let backend = RiscvBackend::new();
+    run_backend(&backend);
 }

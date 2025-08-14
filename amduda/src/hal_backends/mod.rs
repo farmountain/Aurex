@@ -5,6 +5,7 @@ pub mod opencl_backend;
 pub mod rocm_backend;
 pub mod vulkan_backend;
 pub mod sycl_backend;
+pub mod riscv_backend;
 
 /// Enumeration of the available backend types.  This is used by tests to ensure
 /// that the correct backend is selected from environment configuration.
@@ -20,6 +21,8 @@ pub enum BackendKind {
     OpenCl,
     /// oneAPI SYCL backend.
     Sycl,
+    /// RISC-V backend.
+    Riscv,
 }
 
 /// Select a backend based on the `AUREX_BACKEND` environment variable.  If the
@@ -34,6 +37,7 @@ pub fn select_backend() -> BackendKind {
         "vulkan" if vulkan_backend::VulkanBackend::is_available() => BackendKind::Vulkan,
         "opencl" if opencl_backend::OpenClBackend::is_available() => BackendKind::OpenCl,
         "sycl" if sycl_backend::SyclBackend::is_available() => BackendKind::Sycl,
+        "riscv" if riscv_backend::RiscvBackend::is_available() => BackendKind::Riscv,
         _ => BackendKind::CpuSimd,
     }
 }

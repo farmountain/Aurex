@@ -8,3 +8,5 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 aurex-runtime = { path = "../../aurex-runtime" }
+once_cell = "1"
+libc = "0.2"
