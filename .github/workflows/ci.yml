@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        backend: [cpu, rocm, sycl, opencl]
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Run tests
+        run: |
+          if [ "${{matrix.backend}}" = "cpu" ]; then
+            export AUREX_DISABLE_ROCM=1
+            export AUREX_DISABLE_SYCL=1
+            export AUREX_DISABLE_OPENCL=1
+          elif [ "${{matrix.backend}}" = "rocm" ]; then
+            export AUREX_DISABLE_SYCL=1
+            export AUREX_DISABLE_OPENCL=1
+          elif [ "${{matrix.backend}}" = "sycl" ]; then
+            export AUREX_DISABLE_ROCM=1
+            export AUREX_DISABLE_OPENCL=1
+          elif [ "${{matrix.backend}}" = "opencl" ]; then
+            export AUREX_DISABLE_ROCM=1
+            export AUREX_DISABLE_SYCL=1
+          fi
+          cargo test --workspace --all-targets

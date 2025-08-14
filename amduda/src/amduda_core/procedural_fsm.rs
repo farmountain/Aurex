@@ -60,7 +60,46 @@ impl ProceduralFsm {
         runtime: &Runtime,
         event: RuntimeEvent,
     ) -> State {
-        let ev = runtime.step(event).await;
+        use aurex_runtime::{
+            ConfidenceRegulator, EffortEvaluator, HypothesisManager, ReflexionLoop,
+        };
+        use async_trait::async_trait;
+
+        struct AcceptEvaluator;
+        #[async_trait]
+        impl EffortEvaluator for AcceptEvaluator {
+            async fn evaluate(&self, _event: &RuntimeEvent) -> bool {
+                true
+            }
+        }
+
+        struct EchoRegulator;
+        #[async_trait]
+        impl ConfidenceRegulator for EchoRegulator {
+            async fn regulate(&self, event: &RuntimeEvent) -> RuntimeEvent {
+                event.clone()
+            }
+        }
+
+        struct Reflector;
+        #[async_trait]
+        impl ReflexionLoop for Reflector {
+            async fn reflect(&self, event: &RuntimeEvent) -> RuntimeEvent {
+                event.clone()
+            }
+        }
+
+        struct Manager;
+        #[async_trait]
+        impl HypothesisManager for Manager {
+            async fn manage(&self, event: &RuntimeEvent) -> RuntimeEvent {
+                event.clone()
+            }
+        }
+
+        let ev = runtime
+            .step(event, &AcceptEvaluator, &EchoRegulator, &Reflector, &Manager)
+            .await;
         self.on_event(ev)
     }
 }
