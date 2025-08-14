@@ -34,3 +34,8 @@ jit = ["llvm-sys"]
 [[bench]]
 name = "simd_vs_scalar"
 harness = false
+
+[[example]]
+name = "jit_attention"
+path = "examples/jit_attention.rs"
+required-features = ["jit"]
