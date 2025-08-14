@@ -60,6 +60,18 @@ The `amduda` crate provides the core CUDA-alternative runtime targeting AMD/Inte
 
 ---
 
+## ⚡ Quick Start
+
+Explore the [examples](examples) directory for sample agents and backend demos. Run the [tests](tests) to validate your setup:
+
+```sh
+cargo test --all --exclude amduda
+```
+
+Backend setup guides, API references, and onboarding instructions are available in [docs/](docs).
+
+---
+
 ## 🧪 Example: LLM Agent on AMD ROCm
 
 ```python
