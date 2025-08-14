@@ -66,6 +66,20 @@ impl TensorOps for CpuFallback {
     }
 
     fn attention(&self, q: &[f32], k: &[f32], v: &[f32], dim: usize) -> Vec<f32> {
+        #[cfg(feature = "jit")]
+        {
+            use super::jit_compiler::{compile_kernel_f32, Device};
+            if let Ok(kern) = compile_kernel_f32("mul_f32", Device::CPU) {
+                let score: f32 = q
+                    .iter()
+                    .zip(k)
+                    .map(|(a, b)| (kern.func)(*a, *b))
+                    .sum::<f32>()
+                    / dim as f32;
+                return v.iter().map(|x| x * score).collect();
+            }
+        }
+
         let score: f32 = q.iter().zip(k).map(|(a, b)| a * b).sum::<f32>() / dim as f32;
         v.iter().map(|x| x * score).collect()
     }
