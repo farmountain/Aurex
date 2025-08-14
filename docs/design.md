@@ -29,6 +29,31 @@ let kernel = compile_kernel("add", Device::CPU).unwrap();
 assert_eq!((kernel.func)(1, 2), 3);
 ```
 
+## Profiling and Instrumentation
+
+`aurex-utils` exposes a lightweight profiler that captures per-operation timing, memory
+consumption, and GPU counters. Instrumentation is done through macros that wrap
+TensorOps and runtime code blocks:
+
+```rust
+use aurex_utils::profiler::Profiler;
+use aurex_utils::{profile_runtime_step, profile_tensor_op};
+
+let mut prof = Profiler::new();
+
+profile_tensor_op!(&mut prof, "matmul", {
+    // call into a TensorOps backend
+});
+
+profile_runtime_step!(&mut prof, "decode", {
+    // execute a runtime step
+});
+
+for rec in prof.records() {
+    println!("{:?}", rec);
+}
+```
+
 ## Coding Conventions:
 - Use `async_trait` for extensible agent behavior
 - Never use unsafe unless FFI boundary requires
