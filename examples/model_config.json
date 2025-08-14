@@ -1,0 +1,5 @@
+{
+  "name": "toy",
+  "weight_path": "examples/model_weights.bin",
+  "quantization": "int4"
+}
