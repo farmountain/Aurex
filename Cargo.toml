@@ -6,7 +6,8 @@ members = [
     "aurex-backend",
     "aurex-utils",
     "aurex-plugins/fpga_npu",
-    "amduda"
+    "amduda",
+    "aurex-cli"
 ]
 
 [profile.dev]
