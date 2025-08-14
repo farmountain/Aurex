@@ -162,9 +162,11 @@ version = "0.1.0"
 name = "aurex-runtime"
 version = "0.1.0"
 dependencies = [
+ "amduda",
  "async-trait",
  "aurex-backend",
  "aurex-kernel",
+ "fpga_npu",
  "libloading 0.8.8",
  "tokio",
 ]
@@ -416,6 +418,8 @@ name = "fpga_npu"
 version = "0.1.0"
 dependencies = [
  "aurex-runtime",
+ "libc",
+ "once_cell",
 ]
 
 [[package]]

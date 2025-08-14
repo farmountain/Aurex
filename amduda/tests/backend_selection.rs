@@ -60,3 +60,11 @@ fn selects_sycl_when_requested() {
         assert_eq!(hal_backends::select_backend(), BackendKind::Sycl);
     });
 }
+
+#[test]
+#[serial]
+fn selects_riscv_when_requested() {
+    with_backend_var(Some("riscv"), || {
+        assert_eq!(hal_backends::select_backend(), BackendKind::Riscv);
+    });
+}
