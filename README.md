@@ -133,6 +133,8 @@ ROCm stack.
    cargo test -p amduda --features rocm
    ```
 
+See [docs/backends/rocm.md](docs/backends/rocm.md) for detailed setup and usage instructions, including runtime selection and fallback behaviour.
+
 The build falls back to a CPU implementation when ROCm is not present so the
 project can still be compiled and tested on systems without AMD GPUs.
 
