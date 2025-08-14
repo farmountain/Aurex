@@ -1,6 +1,6 @@
 #![cfg(feature = "jit")]
 
-use amduda::amduda_core::jit_compiler::{compile_kernel, Device};
+use amduda::amduda_core::jit_compiler::{compile_kernel, compile_kernel_f32, Device};
 
 #[test]
 fn cpu_add_kernel_executes() {
@@ -24,5 +24,13 @@ fn kernels_are_cached_per_device() {
     if let Ok(k1) = compile_kernel("add", Device::CPU) {
         let k2 = compile_kernel("add", Device::CPU).unwrap();
         assert_eq!(k1.func as usize, k2.func as usize);
+    }
+}
+
+#[test]
+fn f32_kernel_executes() {
+    if let Ok(k) = compile_kernel_f32("mul_f32", Device::CPU) {
+        let result = (k.func)(2.0, 3.0);
+        assert_eq!(result, 6.0);
     }
 }
