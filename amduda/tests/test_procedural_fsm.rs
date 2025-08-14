@@ -8,36 +8,33 @@ fn run_async<F: std::future::Future<Output = ()>>(fut: F) {
 }
 
 #[test]
-fn fsm_branches_on_cache_hit() {
+fn fsm_branches_and_rolls_back() {
     run_async(async {
         let runtime = Runtime::default();
         let mut fsm = ProceduralFsm::new();
 
-        // Cache hit should skip KV cache update and go directly to attention.
-        let state = fsm
-            .step_with_runtime(&runtime, RuntimeEvent::TokenFetched { cache_hit: true })
-            .await;
-        assert_eq!(state, State::ComputeAttention);
+        // Start with a cache hit which goes directly to attention.
+        let mut ev = RuntimeEvent::TokenFetched { cache_hit: true };
+        ev = fsm.step_with_runtime(&runtime, ev).await;
+        assert_eq!(fsm.state(), State::ComputeAttention);
 
-        // Continue normal flow through attention and output back to fetch.
-        let state = fsm
-            .step_with_runtime(&runtime, RuntimeEvent::AttentionComputed)
-            .await;
-        assert_eq!(state, State::OutputToken);
-        let state = fsm
-            .step_with_runtime(&runtime, RuntimeEvent::TokenEmitted)
-            .await;
-        assert_eq!(state, State::FetchToken);
+        // Continue through attention and output back to fetch.
+        ev = fsm.step_with_runtime(&runtime, ev).await;
+        assert_eq!(fsm.state(), State::OutputToken);
+        ev = fsm.step_with_runtime(&runtime, ev).await;
+        assert_eq!(fsm.state(), State::FetchToken);
 
-        // Cache miss requires KV cache update before attention.
-        let state = fsm
-            .step_with_runtime(&runtime, RuntimeEvent::TokenFetched { cache_hit: false })
+        // Returned event now represents the next token fetch. Simulate cache miss.
+        ev = fsm.step_with_runtime(&runtime, ev).await;
+        assert_eq!(fsm.state(), State::KVCacheUpdate);
+        let _ = fsm.step_with_runtime(&runtime, ev).await;
+        assert_eq!(fsm.state(), State::ComputeAttention);
+
+        // Roll back the computation and ensure we return to fetching.
+        let _ = fsm
+            .step_with_runtime(&runtime, RuntimeEvent::Rollback)
             .await;
-        assert_eq!(state, State::KVCacheUpdate);
-        let state = fsm
-            .step_with_runtime(&runtime, RuntimeEvent::CacheUpdated)
-            .await;
-        assert_eq!(state, State::ComputeAttention);
+        assert_eq!(fsm.state(), State::FetchToken);
     });
 }
 
@@ -48,16 +45,13 @@ fn fsm_handles_errors() {
         let mut fsm = ProceduralFsm::new();
 
         // Any error event should transition to the error state regardless of current state.
-        let state = fsm
-            .step_with_runtime(&runtime, RuntimeEvent::Error)
-            .await;
-        assert_eq!(state, State::Error);
+        let _ev = fsm.step_with_runtime(&runtime, RuntimeEvent::Error).await;
+        assert_eq!(fsm.state(), State::Error);
 
         // After entering Error state, further events should not change the state.
-        let state = fsm
+        let _ev = fsm
             .step_with_runtime(&runtime, RuntimeEvent::TokenEmitted)
             .await;
-        assert_eq!(state, State::Error);
+        assert_eq!(fsm.state(), State::Error);
     });
 }
-
