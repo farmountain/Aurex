@@ -1,5 +1,6 @@
 use amduda::amduda_core::memory_tiering::{DeviceCapabilities, MemoryTier};
 use amduda::aurex_lm::paged_attention::PagedAttention;
+use serial_test::serial;
 
 fn naive_sliding_window(q: &[f32], k: &[f32], v: &[f32], d: usize, window: usize) -> Vec<f32> {
     assert_eq!(k.len(), v.len());
@@ -40,6 +41,7 @@ fn naive_sliding_window(q: &[f32], k: &[f32], v: &[f32], d: usize, window: usize
 }
 
 #[test]
+#[serial]
 fn sliding_window_attention_correctness_and_tiering() {
     std::env::set_var("AMDUDA_HAS_GPU", "0");
     std::env::set_var("AMDUDA_HAS_NVME", "1");
