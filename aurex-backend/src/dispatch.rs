@@ -88,12 +88,11 @@ impl TensorOps for CpuBackend {
 }
 
 use crate::vulkan_backend::VulkanBackend;
+pub use crate::sycl_backend::SyclBackend;
 
 /// Placeholder GPU backends delegating to the CPU implementation.
 #[derive(Clone, Copy, Debug)]
 pub struct RocmBackend;
-#[derive(Clone, Copy, Debug)]
-pub struct SyclBackend;
 #[derive(Clone, Copy, Debug)]
 pub struct OpenClBackend;
 
@@ -118,26 +117,6 @@ impl TensorOps for RocmBackend {
     }
 }
 
-impl TensorOps for SyclBackend {
-    fn matmul(&self, a: &[f32], b: &[f32], m: usize, n: usize, k: usize) -> Vec<f32> {
-        CpuBackend.matmul(a, b, m, n, k)
-    }
-    fn conv2d(
-        &self,
-        input: &[f32],
-        kernel: &[f32],
-        input_shape: (usize, usize),
-        kernel_shape: (usize, usize),
-    ) -> Vec<f32> {
-        CpuBackend.conv2d(input, kernel, input_shape, kernel_shape)
-    }
-    fn attention(&self, q: &[f32], k: &[f32], v: &[f32], dim: usize) -> Vec<f32> {
-        CpuBackend.attention(q, k, v, dim)
-    }
-    fn layer_norm(&self, x: &[f32], g: &[f32], b: &[f32], eps: f32) -> Vec<f32> {
-        CpuBackend.layer_norm(x, g, b, eps)
-    }
-}
 
 impl TensorOps for OpenClBackend {
     fn matmul(&self, a: &[f32], b: &[f32], m: usize, n: usize, k: usize) -> Vec<f32> {
@@ -206,7 +185,9 @@ impl Dispatcher {
         match backend {
             Backend::Cpu => true,
             Backend::Rocm => std::env::var("AUREX_DISABLE_ROCM").is_err(),
-            Backend::Sycl => std::env::var("AUREX_DISABLE_SYCL").is_err(),
+            Backend::Sycl => {
+                std::env::var("AUREX_DISABLE_SYCL").is_err() && SyclBackend::is_available()
+            },
             Backend::OpenCl => std::env::var("AUREX_DISABLE_OPENCL").is_err(),
             Backend::Vulkan => {
                 std::env::var("AUREX_DISABLE_VULKAN").is_err() && VulkanBackend::is_available()
@@ -230,7 +211,7 @@ impl Dispatcher {
         match backend {
             Backend::Cpu => Box::new(CpuBackend),
             Backend::Rocm => Box::new(RocmBackend),
-            Backend::Sycl => Box::new(SyclBackend),
+            Backend::Sycl => Box::new(SyclBackend::new()),
             Backend::OpenCl => Box::new(OpenClBackend),
             Backend::Vulkan => Box::new(VulkanBackend::new()),
         }

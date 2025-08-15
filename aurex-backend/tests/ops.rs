@@ -5,7 +5,7 @@ fn all_backends() -> Vec<Box<dyn TensorOps>> {
     vec![
         Box::new(CpuBackend),
         Box::new(RocmBackend),
-        Box::new(SyclBackend),
+        Box::new(SyclBackend::new()),
         Box::new(OpenClBackend),
         Box::new(VulkanBackend::new()),
     ]
