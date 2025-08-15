@@ -88,14 +88,14 @@ impl OpenClBackend {
     }
 
     /// Launch a previously "compiled" kernel.  When OpenCL is unavailable we
-    /// simply execute the supplied closure on the host.
-    fn launch<F>(&self, f: F)
+    /// simply execute the supplied closure on the host and return its result.
+    fn launch<F, R>(&self, f: F) -> R
     where
-        F: FnOnce(),
+        F: FnOnce() -> R,
     {
         // A real implementation would enqueue the kernel on a command queue and
         // wait for completion.  For the stub we directly execute the closure.
-        f();
+        f()
     }
 }
 
@@ -103,8 +103,7 @@ impl TensorOps for OpenClBackend {
     fn matmul(&self, a: &[f32], b: &[f32], m: usize, n: usize, k: usize) -> Vec<f32> {
         let cpu = CpuFallback;
         self.compile_kernel("", "matmul");
-        self.launch(|| {});
-        cpu.matmul(a, b, m, n, k)
+        self.launch(|| cpu.matmul(a, b, m, n, k))
     }
 
     fn conv2d(
@@ -116,22 +115,19 @@ impl TensorOps for OpenClBackend {
     ) -> Vec<f32> {
         let cpu = CpuFallback;
         self.compile_kernel("", "conv2d");
-        self.launch(|| {});
-        cpu.conv2d(input, kernel, input_shape, kernel_shape)
+        self.launch(|| cpu.conv2d(input, kernel, input_shape, kernel_shape))
     }
 
     fn attention(&self, q: &[f32], k: &[f32], v: &[f32], dim: usize) -> Vec<f32> {
         let cpu = CpuFallback;
         self.compile_kernel("", "attention");
-        self.launch(|| {});
-        cpu.attention(q, k, v, dim)
+        self.launch(|| cpu.attention(q, k, v, dim))
     }
 
     fn layer_norm(&self, x: &[f32], gamma: &[f32], beta: &[f32], eps: f32) -> Vec<f32> {
         let cpu = CpuFallback;
         self.compile_kernel("", "layer_norm");
-        self.launch(|| {});
-        cpu.layer_norm(x, gamma, beta, eps)
+        self.launch(|| cpu.layer_norm(x, gamma, beta, eps))
     }
 }
 
