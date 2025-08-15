@@ -87,6 +87,8 @@ impl TensorOps for CpuBackend {
     }
 }
 
+use crate::vulkan_backend::VulkanBackend;
+
 /// Placeholder GPU backends delegating to the CPU implementation.
 #[derive(Clone, Copy, Debug)]
 pub struct RocmBackend;
@@ -165,6 +167,7 @@ pub enum Backend {
     Rocm,
     Sycl,
     OpenCl,
+    Vulkan,
 }
 
 /// Simplified workload descriptor used by the dispatcher.
@@ -205,13 +208,16 @@ impl Dispatcher {
             Backend::Rocm => std::env::var("AUREX_DISABLE_ROCM").is_err(),
             Backend::Sycl => std::env::var("AUREX_DISABLE_SYCL").is_err(),
             Backend::OpenCl => std::env::var("AUREX_DISABLE_OPENCL").is_err(),
+            Backend::Vulkan => {
+                std::env::var("AUREX_DISABLE_VULKAN").is_err() && VulkanBackend::is_available()
+            }
         }
     }
 
     /// Automatically select the most appropriate backend for the workload.
     fn select_backend(workload: Workload) -> Backend {
         if matches!(workload, Workload::Heavy) {
-            for candidate in [Backend::Rocm, Backend::OpenCl, Backend::Sycl] {
+            for candidate in [Backend::Rocm, Backend::OpenCl, Backend::Sycl, Backend::Vulkan] {
                 if Self::is_available(candidate) {
                     return candidate;
                 }
@@ -226,6 +232,7 @@ impl Dispatcher {
             Backend::Rocm => Box::new(RocmBackend),
             Backend::Sycl => Box::new(SyclBackend),
             Backend::OpenCl => Box::new(OpenClBackend),
+            Backend::Vulkan => Box::new(VulkanBackend::new()),
         }
     }
 }

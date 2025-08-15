@@ -1,4 +1,5 @@
 use aurex_backend::dispatch::{TensorOps, CpuBackend, RocmBackend, SyclBackend, OpenClBackend};
+use aurex_backend::VulkanBackend;
 
 fn all_backends() -> Vec<Box<dyn TensorOps>> {
     vec![
@@ -6,6 +7,7 @@ fn all_backends() -> Vec<Box<dyn TensorOps>> {
         Box::new(RocmBackend),
         Box::new(SyclBackend),
         Box::new(OpenClBackend),
+        Box::new(VulkanBackend::new()),
     ]
 }
 

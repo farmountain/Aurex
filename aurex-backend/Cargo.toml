@@ -5,6 +5,9 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
+ash = { version = "0.37", default-features = false, features = ["loaded"] }
+anyhow = "1"
+shaderc = "0.8"
 
 [dev-dependencies]
 serial_test = "2"
