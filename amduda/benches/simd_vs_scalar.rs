@@ -18,5 +18,65 @@ fn matmul_bench(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, matmul_bench);
+fn conv2d_bench(c: &mut Criterion) {
+    let input_shape = (32, 32);
+    let kernel_shape = (3, 3);
+    let input: Vec<f32> = (0..input_shape.0 * input_shape.1).map(|x| x as f32).collect();
+    let kernel: Vec<f32> = (0..kernel_shape.0 * kernel_shape.1).map(|x| x as f32).collect();
+    let cpu = CpuFallback;
+    let simd = CpuSimdBackend;
+    c.bench_function("conv2d_scalar", |bench| {
+        bench.iter(|| {
+            cpu.conv2d(
+                black_box(&input),
+                black_box(&kernel),
+                input_shape,
+                kernel_shape,
+            )
+        })
+    });
+    c.bench_function("conv2d_simd", |bench| {
+        bench.iter(|| {
+            simd.conv2d(
+                black_box(&input),
+                black_box(&kernel),
+                input_shape,
+                kernel_shape,
+            )
+        })
+    });
+}
+
+fn attention_bench(c: &mut Criterion) {
+    let dim = 64;
+    let q: Vec<f32> = (0..dim).map(|x| x as f32).collect();
+    let k: Vec<f32> = (0..dim).map(|x| (x as f32) * 0.5).collect();
+    let v: Vec<f32> = (0..dim).map(|x| (x as f32) * 0.25).collect();
+    let cpu = CpuFallback;
+    let simd = CpuSimdBackend;
+    c.bench_function("attention_scalar", |bench| {
+        bench.iter(|| cpu.attention(black_box(&q), black_box(&k), black_box(&v), dim))
+    });
+    c.bench_function("attention_simd", |bench| {
+        bench.iter(|| simd.attention(black_box(&q), black_box(&k), black_box(&v), dim))
+    });
+}
+
+fn layer_norm_bench(c: &mut Criterion) {
+    let len = 128;
+    let x: Vec<f32> = (0..len).map(|x| x as f32).collect();
+    let gamma: Vec<f32> = vec![1.0; len];
+    let beta: Vec<f32> = vec![0.0; len];
+    let eps = 1e-5;
+    let cpu = CpuFallback;
+    let simd = CpuSimdBackend;
+    c.bench_function("layer_norm_scalar", |bench| {
+        bench.iter(|| cpu.layer_norm(black_box(&x), black_box(&gamma), black_box(&beta), eps))
+    });
+    c.bench_function("layer_norm_simd", |bench| {
+        bench.iter(|| simd.layer_norm(black_box(&x), black_box(&gamma), black_box(&beta), eps))
+    });
+}
+
+criterion_group!(benches, matmul_bench, conv2d_bench, attention_bench, layer_norm_bench);
 criterion_main!(benches);

@@ -26,7 +26,8 @@ pub enum BackendKind {
 }
 
 /// Select a backend based on the `AUREX_BACKEND` environment variable.  If the
-/// requested backend is unavailable we fall back to the CPU implementation.
+/// requested backend is unavailable we fall back to the SIMD-accelerated CPU
+/// implementation so that tensor ops still benefit from vectorization.
 pub fn select_backend() -> BackendKind {
     match std::env::var("AUREX_BACKEND")
         .unwrap_or_default()
