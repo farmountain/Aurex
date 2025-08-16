@@ -7,6 +7,7 @@
 
 use crate::amduda_core::memory_tiering::{self, MemoryTier};
 use anyhow::Result;
+use aurex_runtime::{Precision, Runtime};
 use memmap2::{Mmap, MmapOptions};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
@@ -83,7 +84,9 @@ pub fn load_model(path: &str) -> Result<LoadedModel> {
     })
 }
 
-use super::quantizer::{dequantize_bf16, dequantize_int4, dequantize_int8, quantize_bf16, quantize_int4, quantize_int8};
+use super::quantizer::{
+    dequantize_bf16, dequantize_int4, dequantize_int8, quantize_bf16, quantize_int4, quantize_int8,
+};
 
 impl LoadedModel {
     /// Change the precision of the provided `data` slice and update the stored
@@ -143,6 +146,24 @@ impl LoadedModel {
                 Some(dequantize_bf16(&u16s))
             }
             _ => None,
+        }
+    }
+
+    /// Change the runtime precision and re-encode the provided floating point
+    /// `data` slice accordingly.  This enables dynamic precision scaling by
+    /// keeping the runtime and loaded weights in sync.
+    pub fn apply_precision(&mut self, runtime: &mut Runtime, data: &[f32], precision: Precision) {
+        runtime.set_precision(precision);
+        match precision {
+            Precision::Int8 => self.change_precision(data, Quantization::Int8),
+            Precision::Int4 => self.change_precision(data, Quantization::Int4),
+            Precision::Bf16 => self.change_precision(data, Quantization::Bf16),
+            Precision::F32 => {
+                let bytes: Vec<u8> = data.iter().flat_map(|v| v.to_le_bytes()).collect();
+                self.weights = Weights::Memory(bytes);
+                self.config.quantization = None;
+                self.scale = None;
+            }
         }
     }
 }

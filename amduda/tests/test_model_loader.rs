@@ -1,8 +1,9 @@
 use amduda::amduda_core::memory_tiering::MemoryTier;
-use amduda::aurex_lm::model_loader::{load_model, Quantization, Weights};
+use amduda::aurex_lm::model_loader::{load_model, LoadedModel, ModelConfig, Quantization, Weights};
 use amduda::aurex_lm::quantizer::{quantize_int4, quantize_int8};
-use serial_test::serial;
+use aurex_runtime::{Precision, Runtime};
 use serde_json::json;
+use serial_test::serial;
 use tempfile::tempdir;
 
 fn write_dummy_model(size: usize, quant: &str) -> std::path::PathBuf {
@@ -124,6 +125,32 @@ fn test_dequantize_int4() {
     let data = [0.0_f32, 1.0, -1.0, 0.5];
     let config = write_quantized_model(&data, Quantization::Int4);
     let model = load_model(config.to_str().unwrap()).unwrap();
+    let deq = model.dequantized_weights(data.len()).unwrap();
+    for (orig, got) in data.iter().zip(deq.iter()) {
+        assert!((orig - got).abs() < 0.1);
+    }
+}
+
+#[test]
+#[serial]
+fn test_dynamic_precision_scaling() {
+    std::env::set_var("AMDUDA_HAS_GPU", "0");
+    std::env::set_var("AMDUDA_HAS_NVME", "0");
+    let data = [0.0_f32, 1.0, -1.0, 0.5];
+    let mut model = LoadedModel {
+        config: ModelConfig {
+            name: "dummy".into(),
+            weight_path: String::new(),
+            quantization: None,
+            scale: None,
+        },
+        weights: Weights::Memory(Vec::new()),
+        tier: MemoryTier::Cpu,
+        scale: None,
+    };
+    let mut runtime = Runtime::default();
+    model.apply_precision(&mut runtime, &data, Precision::Int4);
+    assert_eq!(runtime.precision(), Precision::Int4);
     let deq = model.dequantized_weights(data.len()).unwrap();
     for (orig, got) in data.iter().zip(deq.iter()) {
         assert!((orig - got).abs() < 0.1);
