@@ -1,5 +1,6 @@
 use amduda::amduda_core::memory_tiering::MemoryTier;
 use amduda::aurex_lm::model_loader::{load_model, Quantization, Weights};
+use amduda::aurex_lm::quantizer::{quantize_int4, quantize_int8};
 use serial_test::serial;
 use serde_json::json;
 use tempfile::tempdir;
@@ -16,6 +17,33 @@ fn write_dummy_model(size: usize, quant: &str) -> std::path::PathBuf {
     });
     std::fs::write(&config_path, serde_json::to_vec(&cfg).unwrap()).unwrap();
     // Keep directory alive by leaking it; tests are short lived.
+    std::mem::forget(dir);
+    config_path
+}
+
+fn write_quantized_model(data: &[f32], quant: Quantization) -> std::path::PathBuf {
+    let dir = tempdir().unwrap();
+    let weights_path = dir.path().join("weights.bin");
+    let (bytes, scale) = match quant {
+        Quantization::Int8 => {
+            let (q, s) = quantize_int8(data);
+            (q.into_iter().map(|v| v as u8).collect(), Some(s))
+        }
+        Quantization::Int4 => {
+            let (q, s) = quantize_int4(data);
+            (q, Some(s))
+        }
+        Quantization::Bf16 => unreachable!(),
+    };
+    std::fs::write(&weights_path, bytes).unwrap();
+    let config_path = dir.path().join("config.json");
+    let cfg = json!({
+        "name": "dummy",
+        "weight_path": weights_path,
+        "quantization": quant,
+        "scale": scale,
+    });
+    std::fs::write(&config_path, serde_json::to_vec(&cfg).unwrap()).unwrap();
     std::mem::forget(dir);
     config_path
 }
@@ -72,4 +100,32 @@ fn test_load_large_model_gpu_nvme() {
     let config = write_dummy_model(200, "int8");
     let model = load_model(config.to_str().unwrap()).unwrap();
     assert_eq!(model.tier, MemoryTier::Nvme);
+}
+
+#[test]
+#[serial]
+fn test_dequantize_int8() {
+    std::env::set_var("AMDUDA_HAS_GPU", "0");
+    std::env::set_var("AMDUDA_HAS_NVME", "0");
+    let data = [1.0_f32, -1.0, 0.5, -0.5];
+    let config = write_quantized_model(&data, Quantization::Int8);
+    let model = load_model(config.to_str().unwrap()).unwrap();
+    let deq = model.dequantized_weights(data.len()).unwrap();
+    for (orig, got) in data.iter().zip(deq.iter()) {
+        assert!((orig - got).abs() < 0.05);
+    }
+}
+
+#[test]
+#[serial]
+fn test_dequantize_int4() {
+    std::env::set_var("AMDUDA_HAS_GPU", "0");
+    std::env::set_var("AMDUDA_HAS_NVME", "0");
+    let data = [0.0_f32, 1.0, -1.0, 0.5];
+    let config = write_quantized_model(&data, Quantization::Int4);
+    let model = load_model(config.to_str().unwrap()).unwrap();
+    let deq = model.dequantized_weights(data.len()).unwrap();
+    for (orig, got) in data.iter().zip(deq.iter()) {
+        assert!((orig - got).abs() < 0.1);
+    }
 }
