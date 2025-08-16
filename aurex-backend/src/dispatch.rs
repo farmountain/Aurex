@@ -164,14 +164,24 @@ pub struct Dispatcher {
 
 impl Dispatcher {
     /// Create a new dispatcher selecting a backend based on user preference,
-    /// availability and workload characteristics.
+    /// availability and workload characteristics.  If [`preferred`] is `None`
+    /// the dispatcher consults the `AUREX_BACKEND` environment variable.  When
+    /// the requested backend is unavailable it falls back to an automatically
+    /// selected implementation for the provided [`Workload`].
     pub fn new(preferred: Option<Backend>, workload: Workload) -> Self {
+        let preferred = preferred.or_else(Self::backend_from_env);
         let backend = match preferred {
             Some(b) if Self::is_available(b) => b,
             _ => Self::select_backend(workload),
         };
         let ops = Self::backend_ops(backend);
         Self { backend, ops }
+    }
+
+    /// Convenience wrapper constructing the dispatcher solely from environment
+    /// variables and workload description.
+    pub fn from_env(workload: Workload) -> Self {
+        Self::new(None, workload)
     }
 
     /// Return the backend currently used by the dispatcher.
@@ -205,6 +215,21 @@ impl Dispatcher {
             }
         }
         Backend::Cpu
+    }
+
+    /// Parse the `AUREX_BACKEND` environment variable into a [`Backend`]
+    /// value.  Unknown strings are ignored and yield `None`.
+    fn backend_from_env() -> Option<Backend> {
+        std::env::var("AUREX_BACKEND")
+            .ok()
+            .and_then(|v| match v.to_lowercase().as_str() {
+                "cpu" => Some(Backend::Cpu),
+                "rocm" => Some(Backend::Rocm),
+                "sycl" => Some(Backend::Sycl),
+                "opencl" => Some(Backend::OpenCl),
+                "vulkan" => Some(Backend::Vulkan),
+                _ => None,
+            })
     }
 
     fn backend_ops(backend: Backend) -> Box<dyn TensorOps + Send + Sync> {
