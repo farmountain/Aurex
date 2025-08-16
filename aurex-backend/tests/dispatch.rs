@@ -5,6 +5,8 @@ fn reset_env() {
     std::env::remove_var("AUREX_DISABLE_ROCM");
     std::env::remove_var("AUREX_DISABLE_OPENCL");
     std::env::remove_var("AUREX_DISABLE_SYCL");
+    std::env::remove_var("AUREX_DISABLE_VULKAN");
+    std::env::remove_var("AUREX_BACKEND");
 }
 
 #[test]
@@ -13,6 +15,15 @@ fn honors_user_preference() {
     reset_env();
     let d = Dispatcher::new(Some(Backend::Sycl), Workload::Light);
     assert_eq!(d.backend(), Backend::Sycl);
+}
+
+#[test]
+#[serial]
+fn env_var_overrides_workload() {
+    reset_env();
+    std::env::set_var("AUREX_BACKEND", "opencl");
+    let d = Dispatcher::new(None, Workload::Light);
+    assert_eq!(d.backend(), Backend::OpenCl);
 }
 
 #[test]
