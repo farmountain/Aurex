@@ -27,6 +27,9 @@ pub struct ModelConfig {
     pub weight_path: String,
     #[serde(default)]
     pub quantization: Option<Quantization>,
+    /// Optional scale factor for pre-quantized INT4/INT8 weights.
+    #[serde(default)]
+    pub scale: Option<f32>,
 }
 
 /// Concrete representation of loaded weights.
@@ -73,10 +76,10 @@ pub fn load_model(path: &str) -> Result<LoadedModel> {
     };
 
     Ok(LoadedModel {
+        scale: config.scale,
         config,
         weights,
         tier,
-        scale: None,
     })
 }
 
@@ -115,12 +118,26 @@ impl LoadedModel {
                 let data: Vec<i8> = bytes.iter().map(|&b| b as i8).collect();
                 self.scale.map(|s| dequantize_int8(&data, s))
             }
+            (Weights::Mmap(mmap), Some(Quantization::Int8)) => {
+                let data: Vec<i8> = mmap.iter().map(|&b| b as i8).collect();
+                self.scale.map(|s| dequantize_int8(&data, s))
+            }
             (Weights::Memory(bytes), Some(Quantization::Int4)) => {
                 self.scale.map(|s| dequantize_int4(bytes, s, len))
+            }
+            (Weights::Mmap(mmap), Some(Quantization::Int4)) => {
+                self.scale.map(|s| dequantize_int4(&mmap[..], s, len))
             }
             (Weights::Memory(bytes), Some(Quantization::Bf16)) => {
                 let mut u16s = Vec::with_capacity(bytes.len() / 2);
                 for chunk in bytes.chunks(2) {
+                    u16s.push(u16::from_le_bytes([chunk[0], chunk[1]]));
+                }
+                Some(dequantize_bf16(&u16s))
+            }
+            (Weights::Mmap(mmap), Some(Quantization::Bf16)) => {
+                let mut u16s = Vec::with_capacity(mmap.len() / 2);
+                for chunk in mmap.chunks(2) {
                     u16s.push(u16::from_le_bytes([chunk[0], chunk[1]]));
                 }
                 Some(dequantize_bf16(&u16s))
