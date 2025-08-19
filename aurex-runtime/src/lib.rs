@@ -193,6 +193,30 @@ mod tests {
         }
     }
 
+    struct EmitRegulator;
+    #[async_trait]
+    impl ConfidenceRegulator for EmitRegulator {
+        async fn regulate(&self, _event: &RuntimeEvent) -> RuntimeEvent {
+            RuntimeEvent::TokenEmitted
+        }
+    }
+
+    struct RollbackReflexion;
+    #[async_trait]
+    impl ReflexionLoop for RollbackReflexion {
+        async fn reflect(&self, _event: &RuntimeEvent) -> RuntimeEvent {
+            RuntimeEvent::Rollback
+        }
+    }
+
+    struct FetchManager;
+    #[async_trait]
+    impl HypothesisManager for FetchManager {
+        async fn manage(&self, _event: &RuntimeEvent) -> RuntimeEvent {
+            RuntimeEvent::TokenFetched { cache_hit: true }
+        }
+    }
+
     #[tokio::test]
     async fn runtime_step_success() {
         let runtime = Runtime::default();
@@ -219,5 +243,19 @@ mod tests {
             .step(event, &evaluator, &regulator, &reflexion, &manager)
             .await;
         assert_eq!(result, RuntimeEvent::Error);
+    }
+
+    #[tokio::test]
+    async fn runtime_step_pipeline_modifications() {
+        let runtime = Runtime::default();
+        let event = RuntimeEvent::TokenFetched { cache_hit: false };
+        let evaluator = AcceptEvaluator;
+        let regulator = EmitRegulator;
+        let reflexion = RollbackReflexion;
+        let manager = FetchManager;
+        let result = runtime
+            .step(event, &evaluator, &regulator, &reflexion, &manager)
+            .await;
+        assert_eq!(result, RuntimeEvent::AttentionComputed);
     }
 }
